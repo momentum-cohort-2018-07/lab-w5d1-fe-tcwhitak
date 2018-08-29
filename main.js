@@ -10,6 +10,8 @@ let deltaBallY = -1
 const paddleHeight = 10
 const paddleWidth = 75
 let paddleX = (canvas.width - paddleWidth) / 2
+let rightPressed = false
+let leftPressed = false
 
 class Game {
   constructor () {
@@ -19,13 +21,14 @@ class Game {
       width: this.canvas.width,
       height: this.canvas.height }
     this.paddle = new Paddle(this, paddleHeight, paddleWidth, paddleX)
-    this.ball = new Ball(this, deltaBallX, deltaBallY, ballX, ballY)
+    this.ball = new Ball(this, deltaBallX, deltaBallY, ballX, ballY, this.paddle)
     this.ticks = 0
     let tick = () => {
       this.ticks++
       this.update()
       this.draw()
-
+      document.addEventListener('keydown', keyDownHandler, false)
+      document.addEventListener('keyup', keyUpHandler, false)
       window.requestAnimationFrame(tick)
     }
     this.tick = tick
@@ -47,8 +50,9 @@ class Game {
 }
 
 class Ball {
-  constructor (game, deltaBallX, deltaBallY, ballX, ballY) {
+  constructor (game, deltaBallX, deltaBallY, ballX, ballY, paddle) {
     this.game = game
+    this.paddle = paddle
     this.Pos = {x: ballX, y: ballY}
     this.radius = ballRadius
     this.velocity = {x: deltaBallX, y: deltaBallY}
@@ -66,9 +70,15 @@ class Ball {
       deltaBallX = -deltaBallX
     }
     // if next position hits Y edges then change deltaBallY
-    if (this.Pos.y + deltaBallY > canvas.height - ballRadius ||
-        this.Pos.y + deltaBallY < ballRadius) {
+    if (this.Pos.y + deltaBallY < ballRadius) {
       deltaBallY = -deltaBallY
+    } else if (this.Pos.y + deltaBallY > canvas.height - ballRadius) {
+      if (this.Pos.x > this.paddle.Pos.x && this.Pos.x < this.paddle.Pos.x + paddleWidth) {
+        deltaBallY = -deltaBallY
+      } else {
+        window.alert('game over')
+        document.location.reload()
+      }
     }
     // add delta to position for next draw frame
     this.Pos.x += deltaBallX
@@ -81,11 +91,33 @@ class Paddle {
     this.Pos = {x: paddleX, y: canvas.height - paddleHeight}
   }
   draw () {
+    if (rightPressed && this.Pos.x < canvas.width - paddleWidth) {
+      this.Pos.x += 7
+    } else if (leftPressed && this.Pos.x > 0) {
+      this.Pos.x -= 7
+    }
+
     ctx.beginPath()
     ctx.rect(this.Pos.x, this.Pos.y, paddleWidth, paddleHeight)
     ctx.fillStyle = '#0095DD'
     ctx.fill()
     ctx.closePath()
+  }
+}
+
+function keyDownHandler (e) {
+  if (e.keyCode === 39) {
+    rightPressed = true
+  } else if (e.keyCode === 37) {
+    leftPressed = true
+  }
+}
+
+function keyUpHandler (e) {
+  if (e.keyCode === 39) {
+    rightPressed = false
+  } else if (e.keyCode === 37) {
+    leftPressed = false
   }
 }
 
